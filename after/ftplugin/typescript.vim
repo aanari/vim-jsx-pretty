@@ -1,11 +1,12 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Vim ftplugin file
 "
-" Language: javascript.jsx
-" Maintainer: MaxMEllon <maxmellon1994@gmail.com>
-" Depends: pangloss/vim-javascript
+" Language: typescript.tsx
+" Maintainer: aanari <ali@anari.io>
+" Depends: leafgarland/typescript-vim
 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 
 " modified from html.vim
 if exists("loaded_matchit")
@@ -14,4 +15,4 @@ if exists("loaded_matchit")
         \ '<\@<=\([^/][^ \t>]*\)[^>]*\%(>\|$\):<\@<=/\1>'
 endif
 
-setlocal suffixesadd+=.jsx
+setlocal suffixesadd+=.tsx

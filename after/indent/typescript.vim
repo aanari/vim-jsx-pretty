@@ -1,11 +1,12 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Vim indent file
 "
-" Language: javascript.jsx
-" Maintainer: MaxMellon <maxmellon1994@gmail.com>
-" Depends: pangloss/vim-javascript
+" Language: typescript.tsx
+" Maintainer: aanari <ali@anari.io>
+" Depends: leafgarland/typescript-vim
 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 
 if exists('b:did_indent')
   let s:did_indent = b:did_indent
@@ -21,7 +22,7 @@ if exists('s:did_indent')
   let b:did_indent = s:did_indent
 endif
 
-setlocal indentexpr=GetJsxIndent()
+setlocal indentexpr=GetTsxIndent()
 setlocal indentkeys=0{,0},0),0],0\,,!^F,o,O,e,*<Return>,<>>,<<>,/
 
 if exists('*shiftwidth')
@@ -38,7 +39,7 @@ let s:starttag = '^\s*<'
 let s:endtag = '^\s*\/\?>\s*;\='
 let s:real_endtag = '\s*<\/\+[A-Za-z]*>'
 
-let s:has_vim_javascript = exists('*GetJavascriptIndent')
+let s:has_vim_typescript = exists('*GetTypescriptIndent')
 
 let s:true = !0
 let s:false = 0
@@ -53,54 +54,46 @@ function! s:syn_eol(lnum)
   return map(synstack(lnum, col), 'synIDattr(v:val, "name")')
 endfunction
 
-function! s:syn_attr_jsx(synattr)
-  return a:synattr =~ "^jsx"
+function! s:syn_attr_tsx(synattr)
+  return a:synattr =~ "^tsx"
 endfunction
 
 function! s:syn_xmlish(syns)
-  return s:syn_attr_jsx(get(a:syns, -1))
+  return s:syn_attr_tsx(get(a:syns, -1))
 endfunction
 
-function! s:syn_jsx_block_end(syns)
-  return get(a:syns, -1) =~ '\%(js\|javascript\)Braces' ||
-      \  s:syn_attr_jsx(get(a:syns, -2))
+function! s:syn_tsx_block_end(syns)
+  return get(a:syns, -1) =~ '\%(ts\|typescript\)Braces' ||
+      \  s:syn_attr_tsx(get(a:syns, -2))
 endfunction
 
-function! s:syn_jsx_region(syns)
-  return len(filter(copy(a:syns), 'v:val ==# "jsxRegion"'))
+function! s:syn_tsx_region(syns)
+  return len(filter(copy(a:syns), 'v:val ==# "tsxRegion"'))
 endfunction
 
-function! s:syn_js_repeat_braces(syns)
-  return len(filter(copy(a:syns), 'v:val ==# "jsRepeatBraces"'))
+function! s:syn_tsx_close_tag(syns)
+  return len(filter(copy(a:syns), 'v:val ==# "tsxCloseTag"'))
 endfunction
 
-function! s:syn_jsx_else_block(syns)
-  return len(filter(copy(a:syns), 'v:val ==# "jsIfElseBlock"'))
+function! s:syn_tsx_escapets(syns)
+  return len(filter(copy(a:syns), 'v:val ==# "tsxEscapeTs"'))
 endfunction
 
-function! s:syn_jsx_close_tag(syns)
-  return len(filter(copy(a:syns), 'v:val ==# "jsxCloseTag"'))
-endfunction
-
-function! s:syn_jsx_escapejs(syns)
-  return len(filter(copy(a:syns), 'v:val ==# "jsxEscapeJs"'))
-endfunction
-
-function! s:syn_jsx_continues(cursyn, prevsyn)
-  let curdepth = s:syn_jsx_region(a:cursyn)
-  let prevdepth = s:syn_jsx_region(a:prevsyn)
+function! s:syn_tsx_continues(cursyn, prevsyn)
+  let curdepth = s:syn_tsx_region(a:cursyn)
+  let prevdepth = s:syn_tsx_region(a:prevsyn)
 
   return prevdepth == curdepth ||
-      \ (prevdepth == curdepth + 1 && get(a:cursyn, -1) ==# 'jsxRegion')
+      \ (prevdepth == curdepth + 1 && get(a:cursyn, -1) ==# 'tsxRegion')
 endfunction
 
-function! GetJsxIndent()
+function! GetTsxIndent()
   let cursyn  = s:syn_sol(v:lnum)
   let prevsyn = s:syn_eol(v:lnum - 1)
   let nextsyn = s:syn_eol(v:lnum + 1)
 
-  if (s:syn_xmlish(prevsyn) || s:syn_jsx_block_end(prevsyn)) &&
-        \ s:syn_jsx_continues(cursyn, prevsyn)
+  if (s:syn_xmlish(prevsyn) || s:syn_tsx_block_end(prevsyn)) &&
+        \ s:syn_tsx_continues(cursyn, prevsyn)
     let ind = XmlIndentGet(v:lnum, 0)
 
     if getline(v:lnum) =~? s:endtag
@@ -114,7 +107,7 @@ function! GetJsxIndent()
     " <div           | <div
     "   hoge={       |   hoge={
     "   <div></div>  |   ##<div></div>
-    if s:syn_jsx_escapejs(prevsyn) && !(getline(v:lnum - 1) =~? '}')
+    if s:syn_tsx_escapets(prevsyn) && !(getline(v:lnum - 1) =~? '}')
           \&& getline(v:lnum - 1) =~? '{'
       let ind = ind + s:sw()
     endif
@@ -128,7 +121,7 @@ function! GetJsxIndent()
     "   hoge={        |   hoge={
     "     <div></div> |     <div></div>
     "     }           |   }##
-    if s:syn_jsx_escapejs(cursyn) && getline(v:lnum) =~? '}'
+    if s:syn_tsx_escapets(cursyn) && getline(v:lnum) =~? '}'
           \&& !(getline(v:lnum) =~? '{')
       let ind = ind - s:sw()
     endif
@@ -137,17 +130,17 @@ function! GetJsxIndent()
     "   <div>  |   <div>
     "   </div> |   </div>
     " ##);     | ); <--
-    if getline(v:lnum) =~? ');\?' && s:syn_jsx_close_tag(prevsyn)
+    if getline(v:lnum) =~? ');\?' && s:syn_tsx_close_tag(prevsyn)
       let ind = ind - s:sw()
     endif
 
-    if (s:syn_jsx_else_block(cursyn) || s:syn_js_repeat_braces(cursyn))
-          \&& s:syn_jsx_close_tag(prevsyn)
+    if (s:syn_tsx_else_block(cursyn) || s:syn_ts_repeat_braces(cursyn))
+          \&& s:syn_tsx_close_tag(prevsyn)
       let ind = ind - s:sw()
     endif
   else
-    if s:has_vim_javascript ==# s:true
-      let ind = GetJavascriptIndent()
+    if s:has_vim_typescript ==# s:true
+      let ind = GetTypescriptIndent()
     else
       let ind = cindent(v:lnum)
     endif
